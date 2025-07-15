@@ -31,13 +31,10 @@ int main() {
 	index += foreground1.tileset->numTile;
 
 	while(TRUE) {
-		static float hscroll_offset = 0.0f;
-		static int hscroll_fg_offset = 0;
+		static int hscroll_offset = 0;
 
 		VDP_setHorizontalScroll(BG_B, hscroll_offset);
-		VDP_setHorizontalScroll(BG_A, hscroll_fg_offset);
-		hscroll_offset -= 1.2f;
-		hscroll_fg_offset -= 1;
+		hscroll_offset -= 1;
 
 		VDP_waitVSync();
 	}
