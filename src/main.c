@@ -2,11 +2,33 @@
 #include "resources.h"
 
 int main() {
-	VDP_drawText("Hello World!", 4, 4);
-	// Fromt he moon example
-	PAL_setPalette(PAL1, moon.palette->data, DMA);
-	VDP_drawImageEx(BG_A, &moon, TILE_ATTR_FULL(PAL1, 0, 0, 0, 1), 12, 12, 0, CPU);
-	
+
+	u16 index = TILE_USER_INDEX;
+	PAL_setPalette(PAL0, background1.palette->data, DMA);
+
+	VDP_drawImageEx(
+		BG_B,
+		&background1,
+		TILE_ATTR_FULL(PAL0, FALSE, FALSE, FALSE, index),
+		0,
+		0,
+		FALSE,
+		TRUE
+	);
+
+	index += background1.tileset->numTile;
+	PAL_setPalette(PAL1, foreground1.palette->data, DMA);
+
+	VDP_drawImageEx(
+		BG_A,
+		&foreground1,
+		TILE_ATTR_FULL(PAL1, FALSE, FALSE, FALSE, index),
+		0,
+		0,
+		FALSE,
+		TRUE
+	);
+
 	while(TRUE) {
 		VDP_waitVSync();
 	}
