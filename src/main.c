@@ -1,47 +1,23 @@
 #include <genesis.h>
 #include "resources.h"
 
+Sprite* sprite, *hero, *frog;
+
 int main() {
 
-	u16 index = TILE_USER_INDEX;
-	PAL_setPalette(PAL0, background.palette->data, DMA);
+	SPR_init();
+	PAL_setPalette(PAL2, sonic_sprite.palette->data, DMA);
+	PAL_setPalette(PAL3, my_hero.palette->data, DMA);
+	PAL_setPalette(PAL1, frog_sprite.palette->data, DMA);
 
-	VDP_drawImageEx(
-		BG_B,
-		&background,
-		TILE_ATTR_FULL(PAL0, FALSE, FALSE, FALSE, index),
-		0,
-		0,
-		FALSE,
-		TRUE
-	);
-
-	index += background.tileset->numTile;
-	PAL_setPalette(PAL1, foreground.palette->data, DMA);
-
-	VDP_drawImageEx(
-		BG_A,
-		&foreground,
-		TILE_ATTR_FULL(PAL1, FALSE, FALSE, FALSE, index),
-		0,
-		4,
-		FALSE,
-		TRUE
-	);
-	index += foreground.tileset->numTile;
-	VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
+	sprite = SPR_addSprite(&sonic_sprite, 100, 100, TILE_ATTR(PAL2, FALSE, FALSE, FALSE));
+	hero = SPR_addSprite(&my_hero, 50, 50, TILE_ATTR(PAL3, FALSE, FALSE, FALSE));
+	frog = SPR_addSprite(&frog_sprite, 150, 150, TILE_ATTR(PAL1, FALSE, FALSE, FALSE));
 
 	while(TRUE) {
-		static float hscroll_offset = 0.0f;
-		static float vscroll_offset = 0.0f;
+		SPR_update();
 
-		VDP_setHorizontalScroll(BG_B, hscroll_offset);
-		hscroll_offset -= 0.5f;
-
-		VDP_setHorizontalScroll(BG_A, vscroll_offset);
-		vscroll_offset -= 0.75f;
-
-		VDP_waitVSync();
+		SYS_doVBlankProcess();
 	}
 	return 0;
 }
