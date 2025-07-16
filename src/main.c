@@ -11,7 +11,7 @@ int main() {
 		&background,
 		TILE_ATTR_FULL(PAL0, FALSE, FALSE, FALSE, index),
 		0,
-		0,
+		-4,
 		FALSE,
 		TRUE
 	);
@@ -24,7 +24,7 @@ int main() {
 		&foreground,
 		TILE_ATTR_FULL(PAL1, FALSE, FALSE, FALSE, index),
 		0,
-		0,
+		-4,
 		FALSE,
 		TRUE
 	);
@@ -32,10 +32,14 @@ int main() {
 	VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
 
 	while(TRUE) {
-		static int hscroll_offset = 0;
+		static float hscroll_offset = 0.0f;
+		static float vscroll_offset = 0.0f;
 
 		VDP_setHorizontalScroll(BG_B, hscroll_offset);
-		hscroll_offset -= 1;
+		hscroll_offset -= 0.25f;
+
+		VDP_setHorizontalScroll(BG_A, vscroll_offset);
+		vscroll_offset -= 0.75f;
 
 		VDP_waitVSync();
 	}
