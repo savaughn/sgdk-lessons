@@ -3,8 +3,6 @@
 
 extern const Image background;
 extern const Image foreground;
-extern const SpriteDefinition sonic_sprite;
-extern const SpriteDefinition my_hero;
-extern const SpriteDefinition frog_sprite;
+extern const SpriteDefinition frog_sprite_sheet;
 
 #endif // _RES_RESOURCES_H_

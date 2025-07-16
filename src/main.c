@@ -1,21 +1,46 @@
 #include <genesis.h>
 #include "resources.h"
 
-Sprite* sprite, *hero, *frog;
+#define ANIM_IDLE 0
+#define ANIM_WALK 1
+#define ANIM_LOOK 2
+#define ANIM_JUMP 3
+#define ANIM_CROUCH 4
+#define SCREEN_WIDTH 320
+#define SCREEN_HEIGHT 224
+
+Sprite* frog;
 
 int main() {
 
 	SPR_init();
-	PAL_setPalette(PAL2, sonic_sprite.palette->data, DMA);
-	PAL_setPalette(PAL3, my_hero.palette->data, DMA);
-	PAL_setPalette(PAL1, frog_sprite.palette->data, DMA);
-
-	sprite = SPR_addSprite(&sonic_sprite, 100, 100, TILE_ATTR(PAL2, FALSE, FALSE, FALSE));
-	hero = SPR_addSprite(&my_hero, 50, 50, TILE_ATTR(PAL3, FALSE, FALSE, FALSE));
-	frog = SPR_addSprite(&frog_sprite, 150, 150, TILE_ATTR(PAL1, FALSE, FALSE, FALSE));
+	PAL_setPalette(PAL1, frog_sprite_sheet.palette->data, DMA);
+	frog = SPR_addSprite(&frog_sprite_sheet, SCREEN_WIDTH - 40, SCREEN_HEIGHT - 40, TILE_ATTR(PAL1, FALSE, FALSE, FALSE));
+	SPR_setAnim(frog, ANIM_IDLE);
 
 	while(TRUE) {
 		SPR_update();
+
+		static int frameCounter = 0;
+		frameCounter++;
+		if (frameCounter % 150 == 0) { 
+			if (frog->animInd == ANIM_IDLE || frog->animInd == ANIM_LOOK) {
+				SPR_setAnim(frog, ANIM_WALK);
+			} else {
+				SPR_setAnim(frog, ANIM_IDLE);
+			}
+		}
+		if (frameCounter % 300 == 0) {
+			if (frog->animInd == ANIM_WALK) {
+				SPR_setAnim(frog, ANIM_LOOK);
+			} else {
+				SPR_setAnim(frog, ANIM_WALK);
+			}
+		}
+
+		if (frameCounter > 900) {
+			frameCounter = 0;
+		}
 
 		SYS_doVBlankProcess();
 	}
