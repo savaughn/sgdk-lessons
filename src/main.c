@@ -11,7 +11,7 @@ int main() {
 		&background,
 		TILE_ATTR_FULL(PAL0, FALSE, FALSE, FALSE, index),
 		0,
-		-4,
+		0,
 		FALSE,
 		TRUE
 	);
@@ -24,7 +24,7 @@ int main() {
 		&foreground,
 		TILE_ATTR_FULL(PAL1, FALSE, FALSE, FALSE, index),
 		0,
-		-4,
+		4,
 		FALSE,
 		TRUE
 	);
@@ -36,7 +36,7 @@ int main() {
 		static float vscroll_offset = 0.0f;
 
 		VDP_setHorizontalScroll(BG_B, hscroll_offset);
-		hscroll_offset -= 0.25f;
+		hscroll_offset -= 0.5f;
 
 		VDP_setHorizontalScroll(BG_A, vscroll_offset);
 		vscroll_offset -= 0.75f;

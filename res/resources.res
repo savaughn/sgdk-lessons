@@ -1,3 +1,2 @@
-IMAGE background "background.png" 0 ALL
-IMAGE foreground "foreground.png" 0 ALL
-IMAGE moon "moon.bmp" 0 ALL
+IMAGE background "basic_bg.png" 0 ALL
+IMAGE foreground "basic_fg.png" 0 ALL
