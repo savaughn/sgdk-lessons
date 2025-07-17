@@ -15,7 +15,8 @@ Sprite* frog, *frog2;
 typedef enum {
 	STATE_IDLE,
 	STATE_WALK,
-	STATE_LOOK
+	STATE_LOOK,
+	STATE_JUMP
 } PlayerState;
 
 typedef struct {
@@ -26,6 +27,8 @@ typedef struct {
 	bool can_idle;
 	PlayerState state;
 } Player;
+
+Player player_1, player_2;
 
 static void walk(Player* player) {
 	SPR_setAnim(player->sprite, ANIM_WALK);
@@ -60,6 +63,11 @@ static void animatePlayer(Player* player, u16 joyState) {
 			player->frameCounter++;
 			player->can_idle = TRUE;
 			break;
+		case STATE_JUMP:
+			SPR_setAnimAndFrame(player->sprite, ANIM_JUMP, 0);
+			player->frameCounter = 0;
+			player->can_idle = FALSE;
+			break;
 	}
 
 	// Reset frame counter if done with look state
@@ -69,7 +77,6 @@ static void animatePlayer(Player* player, u16 joyState) {
 	}
 
 	SPR_setPosition(player->sprite, player->x, player->y);
-
 }
 
 static void handleInput(Player* player, u16* joyState, u16 joy) {
@@ -86,6 +93,22 @@ static void handleInput(Player* player, u16* joyState, u16 joy) {
 	}
 }
 
+static void joyEvent(u16 joy, u16 changed, u16 state) {
+	if (changed & state & BUTTON_A) {
+		if (joy == JOY_1) {
+			// bool isVisible = SPR_getVisibility(player_1.sprite) == VISIBLE;
+			// SPR_setVisibility(player_1.sprite, isVisible ? HIDDEN : VISIBLE);
+			player_1.state = STATE_JUMP;
+			player_1.can_idle = FALSE;
+		} else if (joy == JOY_2) {
+			bool isVisible = SPR_getVisibility(player_2.sprite) == VISIBLE;
+			SPR_setVisibility(player_2.sprite, isVisible ? HIDDEN : VISIBLE);
+		}
+	}
+	SPR_setPosition(player_1.sprite, player_1.x, player_1.y);
+	SPR_setPosition(player_2.sprite, player_2.x, player_2.y);
+}
+
 int main() {
 
 	SPR_init();
@@ -94,26 +117,24 @@ int main() {
 	frog2 = SPR_addSprite(&frog_sprite_sheet, 0, 0, TILE_ATTR(PAL1, FALSE, FALSE, TRUE));
 
 
-	Player player_1 = {
-		.x = 64,
-		.y = SCREEN_HEIGHT / 2,
-		.sprite = frog,
-		.frameCounter = 0,
-		.can_idle = TRUE,
-		.state = STATE_IDLE
-	};
+	player_1.x = 64;
+	player_1.y = SCREEN_HEIGHT / 2;
+	player_1.sprite = frog;
+	player_1.frameCounter = 0;
+	player_1.can_idle = TRUE;
+	player_1.state = STATE_IDLE;
 
-	Player player_2 = {
-		.x = SCREEN_WIDTH - 64,
-		.y = SCREEN_HEIGHT / 2,
-		.sprite = frog2,
-		.frameCounter = 0,
-		.can_idle = TRUE,
-		.state = STATE_IDLE
-	};
+	player_2.x = SCREEN_WIDTH - 64;
+	player_2.y = SCREEN_HEIGHT / 2;
+	player_2.sprite = frog2;
+	player_2.frameCounter = 0;
+	player_2.can_idle = TRUE;
+	player_2.state = STATE_IDLE;
+
 	SPR_setAnim(frog, ANIM_IDLE);
 	SPR_setAnim(frog2, ANIM_IDLE);
 	SPR_setVisibility(frog2, HIDDEN);
+	JOY_setEventHandler(joyEvent);
 
 
 	static bool player_2_joined = FALSE;
