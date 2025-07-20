@@ -4,7 +4,10 @@
 #include "player.h"
 #include "input.h"
 
+#include "sgp.h"
+
 Sprite* frog, *sonic;
+SGP sgp;
 
 static GameContext* ctx = NULL;
 GameContext* getGameContext(void) {
@@ -93,6 +96,12 @@ u16 ind = TILE_USER_INDEX;
 Map* level_1_map = NULL;
 
 int main() {
+	SGP_init();
+	VDP_init();
+
+	VDP_loadTileSet(&tileset, ind, DMA);
+	level_1_map = MAP_create(&our_level_map, BG_B, TILE_ATTR_FULL(PAL0, FALSE, FALSE, FALSE, ind));
+	PAL_setPalette(PAL0, our_palette.data, DMA);
 
 	SPR_init();
 	PAL_setPalette(PAL2, frog_sprite_sheet.palette->data, DMA);
@@ -129,21 +138,24 @@ int main() {
 
 	JOY_setEventHandler(&joyEvent);
 
-
 	static bool player_2_joined = FALSE;
 
 	while(TRUE) {
-		u16 joyState_1 = 0;
-		u16 joyState_2 = 0;
-		handleInput(&ctx->player_1, &joyState_1, JOY_1);
+		static u16 mapScrollX = 0;
+		MAP_scrollTo(level_1_map, mapScrollX, 768);
+		mapScrollX += 2;
 
-		if ((JOY_readJoypad(JOY_2) & BUTTON_START)) {
+		SGP_PollInput();
+		handleInput(&ctx->player_1, sgp.input.joy1_state, JOY_1);
+
+		// Use SGP_ButtonPressed for player 2 join/leave
+		if (SGP_ButtonPressed(JOY_2, BUTTON_START)) {
 			player_2_joined = !player_2_joined;
 			SPR_setVisibility(ctx->player_2.sprite, player_2_joined ? VISIBLE : HIDDEN);
 		}
-		if (player_2_joined) handleInput(&ctx->player_2, &joyState_2, JOY_2);
-		animatePlayer(&ctx->player_1, joyState_1);
-		if (player_2_joined) animatePlayer(&ctx->player_2, joyState_2);
+		if (player_2_joined) handleInput(&ctx->player_2, sgp.input.joy2_state, JOY_2);
+		animatePlayer(&ctx->player_1, sgp.input.joy1_state);
+		if (player_2_joined) animatePlayer(&ctx->player_2, sgp.input.joy2_state);
 
 		SPR_update();
 

@@ -1,10 +1,10 @@
+
 #include "input.h"
+#include "sgp.h"
 
 // Continuous press event handler for joypad input
-void handleInput(Player* player, u16* joyState, u16 joy) {
-	*joyState = JOY_readJoypad(joy);
-	// Determine state
-	if (*joyState & (BUTTON_UP | BUTTON_DOWN | BUTTON_LEFT | BUTTON_RIGHT)) {
+void handleInput(Player* player, u16 joyState, u16 joy) {
+	if (SGP_ButtonDown(joy, BUTTON_UP | BUTTON_DOWN | BUTTON_LEFT | BUTTON_RIGHT)) {
 		player->state = STATE_WALK;
 	} else if (player->sprite->animInd == ANIM_IDLE && player->frameCounter > 240) {
 		player->state = STATE_LOOK;
@@ -13,14 +13,9 @@ void handleInput(Player* player, u16* joyState, u16 joy) {
 	} else if (player->can_idle) {
 		player->state = STATE_IDLE;
 	}
-	if (*joyState & BUTTON_A) {
-		if (joy == JOY_1) {
-			player->state = STATE_CROUCH;
-			player->can_idle = FALSE;
-		} else if (joy == JOY_2) {
-			player->state = STATE_CROUCH;
-			player->can_idle = FALSE;
-		}
+	if (SGP_ButtonDown(joy, BUTTON_A)) {
+		player->state = STATE_CROUCH;
+		player->can_idle = FALSE;
 	} else {
 		if (player->state == STATE_CROUCH) {
 			player->state = STATE_IDLE;
