@@ -10,7 +10,7 @@
 #define ANIM_CROUCH 4
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 224
-#define WALK_SPEED 2
+#define WALK_SPEED FIX32(2)
 
 #define SONIC_IDLE 0
 #define SONIC_LOOK 1
@@ -27,13 +27,17 @@ typedef enum {
 } PlayerState;
 
 typedef struct {
-	int x;
-	int y;
+	fix32 x;
+	fix32 y;
 	Sprite* sprite;
 	int frameCounter;
 	bool can_idle;
 	PlayerState state;
 	u16 index;
+	fix32 velocity_x;
+	fix32 velocity_y;
+	s16 height;
+	s16 width;
 } Player;
 
 #endif // PLAYER_H

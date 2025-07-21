@@ -89,13 +89,12 @@ static void animatePlayer(Player* player, u16 joyState) {
 		player->can_idle = TRUE;
 	}
 
-	SPR_setPosition(player->sprite, player->x, player->y);
+	SGP_ClampPositionToMapBounds(&player->x, &player->y, player->width, player->height);
 }
 
 u16 ind = TILE_USER_INDEX;
 Map* level_1_map = NULL;
-
-int main() {
+int main(_Bool) {
 	SGP_init();
 	VDP_init();
 
@@ -105,61 +104,105 @@ int main() {
 
 	SPR_init();
 	PAL_setPalette(PAL2, frog_sprite_sheet.palette->data, DMA);
-	PAL_setPalette(PAL3, sonic_image.palette->data, DMA);
 	frog = SPR_addSprite(&frog_sprite_sheet, 0, 0, TILE_ATTR(PAL2, FALSE, FALSE, FALSE));
-	sonic = SPR_addSprite(&sonic_image, 0, 0, TILE_ATTR(PAL3, FALSE, FALSE, TRUE));
 
 	static GameContext context;
 	ctx = &context;
 
 	ctx->player_1 = (Player){
-		.x = 64,
-		.y = SCREEN_HEIGHT / 2,
+		.x = FIX32(34),
+		.y = FIX32(935),
 		.sprite = frog,
 		.frameCounter = 0,
 		.can_idle = TRUE,
 		.state = STATE_IDLE,
-		.index = JOY_1
-	};
-
-	ctx->player_2 = (Player){
-		.x = SCREEN_WIDTH - 64,
-		.y = SCREEN_HEIGHT / 2,
-		.sprite = sonic,
-		.frameCounter = 0,
-		.can_idle = TRUE,
-		.state = STATE_IDLE,
-		.index = JOY_2
+		.index = JOY_1,
+		.velocity_x = FIX32(1.5),
+		.velocity_y = FIX32(0),
+		.height = 32,
+		.width = 32
 	};
 
 	SPR_setAnim(frog, ANIM_IDLE);
-	SPR_setAnim(sonic, ANIM_IDLE);
-	SPR_setVisibility(sonic, HIDDEN);
-
-	JOY_setEventHandler(&joyEvent);
-
-	static bool player_2_joined = FALSE;
+	SGP_CameraInit(level_1_map);
 
 	while(TRUE) {
-		static u16 mapScrollX = 0;
-		MAP_scrollTo(level_1_map, mapScrollX, 768);
-		mapScrollX += 2;
-
 		SGP_PollInput();
 		handleInput(&ctx->player_1, sgp.input.joy1_state, JOY_1);
-
-		// Use SGP_ButtonPressed for player 2 join/leave
-		if (SGP_ButtonPressed(JOY_2, BUTTON_START)) {
-			player_2_joined = !player_2_joined;
-			SPR_setVisibility(ctx->player_2.sprite, player_2_joined ? VISIBLE : HIDDEN);
-		}
-		if (player_2_joined) handleInput(&ctx->player_2, sgp.input.joy2_state, JOY_2);
+		
 		animatePlayer(&ctx->player_1, sgp.input.joy1_state);
-		if (player_2_joined) animatePlayer(&ctx->player_2, sgp.input.joy2_state);
+		SGP_CameraFollowTarget(
+			&(SGPCameraTarget) {
+				.sprite = ctx->player_1.sprite,
+				.target_x_ptr = &ctx->player_1.x,
+				.target_y_ptr = &ctx->player_1.y,
+				.sprite_width = ctx->player_1.width,
+				.sprite_height = ctx->player_1.height,
+			}
+		);
+
+		if (!SGP_isCameraActive()) {
+			SPR_setPosition(ctx->player_1.sprite,
+				F32_toInt(ctx->player_1.x),
+				F32_toInt(ctx->player_1.y));
+		}
+
+		/********DEBUG PRINT**********/
+		char buffer[64];
+    	sprintf(buffer, "p_pos (%d, %d)\n", F32_toInt(ctx->player_1.x), F32_toInt(ctx->player_1.y));
+		SGP_DebugPrint(buffer, 0, 0);
+
+		char buffer2[64];
+		sprintf(buffer2, "c_pos (%d, %d)\n", sgp.camera.current_x, sgp.camera.current_y);
+		SGP_DebugPrint(buffer2, 0, 1);
+
+		char buffer3[64];
+		sprintf(buffer3, "spr_pos (%d, %d)\n", ctx->player_1.sprite->x - VDP_SPRITE_OFFSET, ctx->player_1.sprite->y - VDP_SPRITE_OFFSET);
+		SGP_DebugPrint(buffer3, 0, 2);
+		/********DEBUG PRINT**********/
 
 		SPR_update();
-
 		SYS_doVBlankProcess();
+
+		if (SGP_ButtonPressed(JOY_1, BUTTON_MODE)) {
+			toggleDebug();
+		    if (SGP_isCameraActive()) { 
+				SGP_ShakeCamera(10, 2); // Shake camera for 10 frames with intensity 5
+			} else {
+				SGP_activateCamera();
+			}
+		}
 	}
 	return 0;
 }
+
+// 	JOY_setEventHandler(&joyEvent);
+
+	// PAL_setPalette(PAL3, sonic_image.palette->data, DMA);
+	// sonic = SPR_addSprite(&sonic_image, FIX32(0), FIX32(0), TILE_ATTR(PAL3, FALSE, FALSE, TRUE));
+
+
+	// ctx->player_2 = (Player){
+	// 	.x = FIX32(SCREEN_WIDTH - 64),
+	// 	.y = FIX32(SCREEN_HEIGHT / 2),
+	// 	.sprite = sonic,
+	// 	.frameCounter = 0,
+	// 	.can_idle = TRUE,
+	// 	.state = STATE_IDLE,
+	// 	.index = JOY_2,
+	// 	.velocity_x = FIX32(0),
+	// 	.velocity_y = FIX32(0)
+	// };
+
+	// SPR_setAnim(sonic, ANIM_IDLE);
+	// SPR_setVisibility(sonic, HIDDEN);
+	// static bool player_2_joined = FALSE;
+
+		// Use SGP_ButtonPressed for player 2 join/leave
+		// if (SGP_ButtonPressed(JOY_2, BUTTON_START)) {
+		// 	player_2_joined = !player_2_joined;
+		// 	SPR_setVisibility(ctx->player_2.sprite, player_2_joined ? VISIBLE : HIDDEN);
+		// }
+		// if (player_2_joined) handleInput(&ctx->player_2, sgp.input.joy2_state, JOY_2);
+		// animatePlayer(&ctx->player_1, sgp.input.joy1_state);
+		// if (player_2_joined) animatePlayer(&ctx->player_2, sgp.input.joy2_state);

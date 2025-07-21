@@ -5,6 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "(gdb) Attach",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "${workspaceFolder}/../md-skeleton/blastem/blastem", // Use your ELF file here
+            "MIMode": "gdb"
+        },
+        {
             "name": "Build and Run",
             "type": "node",
             "request": "launch",
@@ -13,6 +20,26 @@
             "runtimeExecutable": "make",
             "runtimeArgs": ["run"],
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Debug with gdb remote",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/out/rom.out",
+            "args": [],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/opt/homebrew/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Connect to BlastEm GDB stub",
+                    "text": "target remote :1234",
+                    "ignoreFailures": false
+                }
+            ]
         }
     ]
 }

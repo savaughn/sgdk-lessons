@@ -36,6 +36,6 @@ void joyEvent(u16 joy, u16 changed, u16 state) {
 			ctx->player_2.can_idle = FALSE;
 		}
 	}
-	SPR_setPosition(ctx->player_1.sprite, ctx->player_1.x, ctx->player_1.y);
-	SPR_setPosition(ctx->player_2.sprite, ctx->player_2.x, ctx->player_2.y);
+	SPR_setPosition(ctx->player_1.sprite, (ctx->player_1.x), (ctx->player_1.y));
+	SPR_setPosition(ctx->player_2.sprite, (ctx->player_2.x), (ctx->player_2.y));
 }
