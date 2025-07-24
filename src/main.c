@@ -120,6 +120,11 @@ static void animatePlayer(Player *player, u16 joyState)
 	SGP_ClampPositionToMapBounds(&player->x, &player->y, player->width, player->height);
 }
 
+static void handleCollision() {
+	sprintf(info, "%10i", F32_toInt(ctx->player_1.x));
+	VDP_drawTextBG(BG_A, info, 28, 5);
+}
+
 u16 ind = TILE_USER_INDEX;
 Map *level_1_map = NULL;
 int main(_Bool)
@@ -166,6 +171,8 @@ int main(_Bool)
 		SGP_PollInput();
 
 		handleInput(&ctx->player_1, sgp.input.joy1_state, JOY_1);
+
+		handleCollision();
 
 		animatePlayer(&ctx->player_1, sgp.input.joy1_state);
 		SGP_CameraFollowTarget(

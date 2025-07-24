@@ -1,17 +1,3 @@
-#include <genesis.h>
-
-#ifndef _RES_RESOURCES_H_
-#define _RES_RESOURCES_H_
-
-extern const Image background;
-extern const SpriteDefinition frog_sprite_sheet;
-extern const TileSet fg_tileset;
-extern const MapDefinition level_map;
-extern const Palette fg_palette;
-
-char info[10];
-
-const u8 COLLISION_ARRAY_LENGTH = 64;
 const u8 COLLISION_ARRAY[1280] =
 {
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
@@ -35,5 +21,4 @@ const u8 COLLISION_ARRAY[1280] =
 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 
 };
-
-#endif // _RES_RESOURCES_H_
+length of collision array 64
