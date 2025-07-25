@@ -1,10 +1,13 @@
 export GDK ?= /opt/toolchains/mars/m68k-elf
 include $(GDK)/makefile.gen
 
-run:
-	make && ../md-skeleton/blastem/blastem out/rom.bin
+run: debug
+	make && /Applications/blastem/blastem out/rom.bin
 
-copy:
+run-release: release
+	make && /Applications/blastem/blastem out/rom.bin
+
+copy: debug
 	make
 	@echo "Copying rom.bin to /Volumes/GENESISSD/rom.bin"
 	@cp out/rom.bin /Volumes/GENESISSD/rom.bin
@@ -14,4 +17,4 @@ copy:
 	fi
 	@echo "Successfully copied rom.bin to /Volumes/GENESISSD/rom.bin"
 	@diskutil eject /Volumes/GENESISSD
-	
+.PHONY: run copy
