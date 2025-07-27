@@ -35,6 +35,9 @@
 #define BUTTON_NONE 0x0000
 #define VDP_SPRITE_OFFSET 0x80 // Offset for sprite coordinates in VDP
 
+#define DEBUG 1
+static const u8 SOLID_TILE = 1;
+
 // Each metatile is 16x16 pixels, so 128x128 pixels block is 8x8 metatiles
 static inline s16 SGP_MetatilesToPixels(s16 x) { return x << 7; }
 
@@ -384,7 +387,7 @@ static inline void SGP_ShakeCamera(s16 duration, s16 intensity)
 // Debug Functions
 //----------------------------------------------------------------------------------
 #ifdef DEBUG
-static bool showDebug = false;
+static bool showDebug = TRUE;
 static inline void SGP_ToggleDebug(void)
 {
     showDebug = !showDebug;
@@ -397,9 +400,12 @@ static inline bool SGP_isDebugEnabled(void)
 
 static inline void SGP_DebugPrint(const char *text, s16 x, s16 y)
 {
+    if (y > 4 ) {
+        return;
+    }
     if (SGP_isDebugEnabled())
     {
-        VDP_setWindowVPos(FALSE, 4);
+        VDP_setWindowVPos(FALSE, 5);
         VDP_drawTextEx(WINDOW, text, TILE_ATTR(PAL1, FALSE, FALSE, FALSE), x, y, DMA);
     }
     else

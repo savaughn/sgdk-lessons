@@ -38,6 +38,8 @@ typedef struct {
 	fix32 velocity_y;
 	s16 height;
 	s16 width;
+	s16 prev_tile_x;
+	s16 prev_tile_y;
 } Player;
 
 #endif // PLAYER_H
