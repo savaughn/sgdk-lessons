@@ -19,6 +19,8 @@ GameContext *getGameContext(void)
 
 static int check_up = 0;
 static int check_down = 0;
+static int check_left = 0;
+static int check_right = 0;
 
 typedef struct
 {
@@ -61,13 +63,12 @@ static bool SGP_PlayerLevelCollision(s16 player_x, s16 player_y, s16 player_widt
 
 	if (direction & direction_up) // UP
 	{
-		check_up++;
 		tile_y_top = (player_y - 1) >> 4;
-		tile_x_left = player_x >> 4;
+		tile_x_left = (player_x + 1) >> 4;
 		arr_ind_top_left = tile_x_left + (tile_y_top * level->length);
 		type_topleft = level->collision_data[arr_ind_top_left];
 
-		tile_x_right = ((player_x + player_width) >> 4);
+		tile_x_right = ((player_x + player_width - 1) >> 4);
 		arr_ind_top_right = tile_x_right + (tile_y_top * level->length);
 		type_topright = level->collision_data[arr_ind_top_right];
 
@@ -75,13 +76,12 @@ static bool SGP_PlayerLevelCollision(s16 player_x, s16 player_y, s16 player_widt
 	}
 	else if (direction & direction_down) // DOWN
 	{
-		check_down++;
 		tile_y_bottom = (player_y + player_height) >> 4;
-		tile_x_left = player_x >> 4;
+		tile_x_left = (player_x + 1) >> 4;
 		arr_ind_bottom_left = tile_x_left + (tile_y_bottom * level->length);
 		type_bottom_left = level->collision_data[arr_ind_bottom_left];
 
-		tile_x_right = ((player_x + player_width) >> 4);
+		tile_x_right = ((player_x + player_width - 1) >> 4);
 		arr_ind_bottom_right = tile_x_right + (tile_y_bottom * level->length);
 		type_bottom_right = level->collision_data[arr_ind_bottom_right];
 
@@ -102,7 +102,7 @@ static bool SGP_PlayerLevelCollision(s16 player_x, s16 player_y, s16 player_widt
 	else if (direction & direction_right) // RIGHT
 	{
 		// check the x + 1 position moving right
-		tile_x_right = (player_x + player_width) >> 4;
+		tile_x_right = (player_x + player_width + 1) >> 4;
 		arr_ind_top_right = tile_x_right + (tile_y_top * level->length);
 		arr_ind_bottom_right = tile_x_right + (tile_y_bottom * level->length);
 		type_topright = level->collision_data[arr_ind_top_right];
@@ -138,93 +138,57 @@ static inline bool isPlayerInNewTile(Player *player, s16 new_tile_x, s16 new_til
 {
 	return (new_tile_x != player->prev_tile_x || new_tile_y != player->prev_tile_y);
 }
+static bool is_colliding_down = FALSE;
+static bool is_colliding_up = FALSE;
+static bool is_colliding_left = FALSE;
+static bool is_colliding_right = FALSE;
 static void animatePlayer(Player *player, u16 joyState)
 {
-	static bool is_colliding_down = FALSE;
-	static bool is_colliding_up = FALSE;
 
 	switch (player->state)
 	{
 	case STATE_WALK:
-		// Calculate new tile coordinates
-		s16 new_tile_x;
-		s16 new_tile_y;
-
-		if (joyState & BUTTON_UP)
+		if (SGP_ButtonDown(player->index, BUTTON_UP))
 		{
-			is_colliding_down = FALSE;
-			// Calculate the next Y position
-			s16 next_y = F32_toInt(player->y) - 1;
-			s16 next_tile_y = next_y >> 4;
-			s16 curr_tile_y = F32_toInt(player->y) >> 4;
-			s16 tile_x = F32_toInt(player->x) >> 4;	
-			new_tile_x = tile_x;
-
-			// if crossing a tile boundary and sprite is not already colliding
-			if (next_tile_y != curr_tile_y && !is_colliding_up)		
+			// About to enter a new tile, check collision at the next position
+			if (!SGP_PlayerLevelCollision(
+					F32_toInt(player->x),
+					F32_toInt(player->y),
+					player->width,
+					player->height,
+					levels[current_level_index],
+					direction_up))
 			{
-				// About to enter a new tile, check collision at the next position
-				if (!SGP_PlayerLevelCollision(
-						F32_toInt(player->x),
-						F32_toInt(player->y),
-						player->width,
-						player->height,
-						levels[current_level_index],
-						direction_up))
-				{
-					player->y -= WALK_SPEED;
-					player->prev_tile_y = next_tile_y;
-				}
-				else
-				{
-					is_colliding_up = TRUE;
-				}
-			}
-			else if (!is_colliding_up)
-			{
-				// Still in the same tile, move freely
 				player->y -= WALK_SPEED;
+				is_colliding_up = FALSE;
+			}
+			else
+			{
+				is_colliding_up = TRUE;
 			}
 		}
-		else if (joyState & BUTTON_DOWN)
+		else if (SGP_ButtonDown(player->index, BUTTON_DOWN))
 		{
-			is_colliding_up = FALSE;
-			// Calculate the next Y position
-			s16 next_y = F32_toInt(player->y) + player->height + 1;
-			s16 next_tile_y = next_y >> 4;
-			s16 curr_tile_y = (F32_toInt(player->y) + player->height - 1) >> 4;
-			s16 tile_x = F32_toInt(player->x) >> 4;
-
-			// if crossing a tile boundary and sprite is not already colliding
-			if (next_tile_y != curr_tile_y && !is_colliding_down)
+			// About to enter a new tile, check collision at the next position
+			if (!SGP_PlayerLevelCollision(
+					F32_toInt(player->x),
+					F32_toInt(player->y),
+					player->width,
+					player->height,
+					levels[current_level_index],
+					direction_down))
 			{
-				// About to enter a new tile, check collision at the next position
-				if (!SGP_PlayerLevelCollision(
-						F32_toInt(player->x),
-						F32_toInt(player->y),
-						player->width,
-						player->height,
-						levels[current_level_index],
-						direction_down))
-				{
-					player->y += WALK_SPEED;
-					player->prev_tile_y = next_tile_y;
-				}
-				else
-				{
-					is_colliding_down = TRUE;
-				}
-			}
-			else if (!is_colliding_down)
-			{
-				// Still in the same tile, move freely
 				player->y += WALK_SPEED;
+				is_colliding_down = FALSE;
+			}
+			else
+			{
+				is_colliding_down = TRUE;
 			}
 		}
-		// todo: make left/right movement only check collision if crossing a tile boundary
-		if (joyState & BUTTON_LEFT)
+		if (SGP_ButtonDown(player->index, BUTTON_LEFT))
 		{
-			is_colliding_down = FALSE;
+			// About to enter a new tile, check collision at the next position
 			if (!SGP_PlayerLevelCollision(
 					F32_toInt(player->x),
 					F32_toInt(player->y),
@@ -235,11 +199,15 @@ static void animatePlayer(Player *player, u16 joyState)
 			{
 				player->x -= WALK_SPEED;
 				SPR_setHFlip(player->sprite, TRUE);
+				is_colliding_left = FALSE;
+			}
+			else
+			{
+				is_colliding_left = TRUE;
 			}
 		}
-		else if (joyState & BUTTON_RIGHT)
+		else if (SGP_ButtonDown(player->index, BUTTON_RIGHT))
 		{
-			is_colliding_down = FALSE;
 			if (!SGP_PlayerLevelCollision(
 					F32_toInt(player->x),
 					F32_toInt(player->y),
@@ -250,11 +218,15 @@ static void animatePlayer(Player *player, u16 joyState)
 			{
 				player->x += WALK_SPEED;
 				SPR_setHFlip(player->sprite, FALSE);
+				is_colliding_right = FALSE;
+			}
+			else
+			{
+				is_colliding_right = TRUE;
+				// player->x -= FIX32(1.1); 
 			}
 		}
 		walk(player);
-		player->prev_tile_x = new_tile_x;
-		player->prev_tile_y = new_tile_y;
 		break;
 	case STATE_LOOK:
 		if (player->index == JOY_1)
@@ -279,6 +251,10 @@ static void animatePlayer(Player *player, u16 joyState)
 		}
 		player->frameCounter++;
 		player->can_idle = TRUE;
+		is_colliding_up = FALSE;
+		is_colliding_down = FALSE;
+		is_colliding_left = FALSE;
+		is_colliding_right = FALSE;
 		break;
 	case STATE_JUMP:
 		if (player->index == JOY_1)
@@ -392,17 +368,17 @@ int main(_Bool)
 		sprintf(buffer, "p_pos (%d, %d)\n", F32_toInt(ctx->player_1.x), F32_toInt(ctx->player_1.y));
 		SGP_DebugPrint(buffer, 0, 0);
 
-		char buffer2[64];
-		sprintf(buffer2, "c_pos (%d, %d)\n", sgp.camera.current_x, sgp.camera.current_y);
-		SGP_DebugPrint(buffer2, 0, 1);
+		// char buffer2[64];
+		// sprintf(buffer2, "c_pos (%d, %d)\n", sgp.camera.current_x, sgp.camera.current_y);
+		// SGP_DebugPrint(buffer2, 0, 1);
 
 		char buffer3[64];
-		sprintf(buffer3, "spr_pos (%d, %d)\n", ctx->player_1.sprite->x - VDP_SPRITE_OFFSET, ctx->player_1.sprite->y - VDP_SPRITE_OFFSET);
-		SGP_DebugPrint(buffer3, 0, 2);
+		sprintf(buffer3, "chk u%d d%d l%d r%d", check_up, check_down, check_left, check_right);
+		SGP_DebugPrint(buffer3, 0, 1);
 
 		char buffer4[64];
-		sprintf(buffer4, "up: %d, down: %d\n", check_up, check_down);
-		SGP_DebugPrint(buffer4, 0, 3);
+		sprintf(buffer4, "u%d, d%d, l%d, r%d", is_colliding_up, is_colliding_down, is_colliding_left, is_colliding_right);
+		SGP_DebugPrint(buffer4, 0, 2);
 		// /********DEBUG PRINT**********/
 
 		if (SGP_ButtonDown(JOY_1, BUTTON_MODE))
