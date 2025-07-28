@@ -51,7 +51,7 @@
 static const u8 SOLID_TILE = 1;
 
 // Each metatile is 16x16 pixels, so 128x128 pixels block is 8x8 metatiles
-static inline s16 SGP_MetatilesToPixels(s16 x) { return x << 7; }
+static inline u16 SGP_MetatilesToPixels(u16 x) { return x << 7; }
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -87,16 +87,16 @@ typedef struct
     fix32 *target_x; // Camera target X
     fix32 *target_y; // Camera target Y
     u8 type;         // Camera type (e.g. CAMERA_SMOOTH)
-    s16 current_x;   // Camera X position (integer for MAP_scrollTo)
-    s16 current_y;   // Camera Y position (integer for MAP_scrollTo)
+    u16 current_x;   // Camera X position (integer for MAP_scrollTo)
+    u16 current_y;   // Camera Y position (integer for MAP_scrollTo)
     Sprite *sprite;
-    s16 sprite_width;  // Width of the sprite being followed
-    s16 sprite_height; // Height of the sprite being followed
+    u16 sprite_width;  // Width of the sprite being followed
+    u16 sprite_height; // Height of the sprite being followed
     bool active;
     Map *map;               // Pointer to the current map being viewed
-    s16 map_height;
-    s16 map_width;
-    s8 max_vertical_scroll; // in Tiles (default 32), used to limit camera scroll
+    u16 map_height;
+    u16 map_width;
+    u16 max_vertical_scroll; // in Tiles (default 32), used to limit camera scroll
 } SGPCamera;
 
 typedef struct
@@ -176,7 +176,7 @@ static inline bool SGP_isDebugEnabled(void)
     return showDebug;
 }
 
-static inline void SGP_DebugPrint(const char *text, s16 x, s16 y)
+static inline void SGP_DebugPrint(const char *text, u16 x, u16 y)
 {
     if (y > 4 ) {
         return;
@@ -268,8 +268,8 @@ typedef struct
     Sprite *sprite;      // Sprite to follow
     fix32 *target_x_ptr; // Target X position (fixed-point)
     fix32 *target_y_ptr; // Target Y Position (fixed-point)
-    s16 sprite_width;    // Width of the sprite being followed
-    s16 sprite_height;   // Height of the sprite being followed
+    u16 sprite_width;    // Width of the sprite being followed
+    u16 sprite_height;   // Height of the sprite being followed
 } SGPCameraTarget;
 
 /**
@@ -293,7 +293,7 @@ static inline u16 SGP_CameraInit(Map *map)
  * @param width Width of the entity
  * @param height Height of the entity
  */
-static inline void SGP_ClampPositionToMapBounds(fix32 *x, fix32 *y, s16 width, s16 height)
+static inline void SGP_ClampPositionToMapBounds(fix32 *x, fix32 *y, u16 width, u16 height)
 {
     s16 pos_x = F32_toInt(*x);
     s16 pos_y = F32_toInt(*y);
@@ -319,8 +319,8 @@ static inline void SGP_CameraFollowTarget(SGPCameraTarget *target)
     {
         return; // Camera not active, skip following
     }
-    s16 target_x_map = F32_toInt(*target->target_x_ptr);
-    s16 target_y_map = F32_toInt(*target->target_y_ptr);
+    u16 target_x_map = F32_toInt(*target->target_x_ptr);
+    u16 target_y_map = F32_toInt(*target->target_y_ptr);
 
     // Center camera on target, but clamp camera to map bounds
     s16 new_camera_x = target_x_map - (screenWidth / 2) + (target->sprite_width / 2);
@@ -389,7 +389,7 @@ static inline bool SGP_isCameraActive(void)
  * @param x New X position
  * @param y New Y position
  */
-static inline void SGP_UpdateCameraPosition(s16 x, s16 y)
+static inline void SGP_UpdateCameraPosition(u32 x, u32 y)
 {
     if (sgp.camera.active)
     {
@@ -403,12 +403,8 @@ static inline void SGP_UpdateCameraPosition(s16 x, s16 y)
  * @brief Sets the horizontal scroll limit for the camera.
  * @param limit New vertical scroll limit in tiles
  */
-static inline void SGP_CameraSetVerticalScrollLimit(s16 limit)
+static inline void SGP_CameraSetVerticalScrollLimit(u16 limit)
 {
-    if (limit < 0)
-    {
-        limit = 0;
-    }
     sgp.camera.max_vertical_scroll = limit;
 }
 
@@ -416,7 +412,7 @@ static inline void SGP_CameraSetVerticalScrollLimit(s16 limit)
  * @brief Gets the vertical scroll limit for the camera.
  * @return Current vertical scroll limit in tiles
  */
-static inline s16 SGP_CameraGetVerticalScrollLimit(void)
+static inline u16 SGP_CameraGetVerticalScrollLimit(void)
 {
     return sgp.camera.max_vertical_scroll;
 }
@@ -428,10 +424,10 @@ static inline s16 SGP_CameraGetVerticalScrollLimit(void)
  *
  * This is just for fun not a serious feature.
  */
-static inline void SGP_ShakeCamera(s16 duration, s16 intensity)
+static inline void SGP_ShakeCamera(u16 duration, s16 intensity)
 {
     SGP_deactivateCamera(); // Disable camera tracking during shake
-    for (s16 i = 0; i < duration; i++)
+    for (u16 i = 0; i < duration; i++)
     {
         s16 shake_x = (i % 2 == 0) ? intensity : -intensity;
         sgp.camera.current_x += shake_x;
@@ -448,23 +444,25 @@ static inline void SGP_ShakeCamera(s16 duration, s16 intensity)
  * Checks for player collision with the level tiles using look-ahead logic.
  * Returns TRUE if a collision is detected in the specified direction.
  */
-static inline bool SGP_PlayerLevelCollision(s16 player_x, s16 player_y, s16 player_width, s16 player_height, const SGPLevelCollisionData *level, u8 direction)
+static inline bool SGP_PlayerLevelCollision(
+    s16 player_x, s16 player_y, u16 player_width, u16 player_height,
+    const SGPLevelCollisionData *level, u16 direction)
 {
     s16 tile_x_left;
     s16 tile_x_right;
     s16 tile_y_top = player_y >> 4;
     s16 tile_y_bottom = (player_y + player_height - 1) >> 4;
 
-    u16 arr_ind_top_left;
-    u16 arr_ind_top_right;
-    u16 arr_ind_bottom_left;
-    u16 arr_ind_bottom_right;
+    s16 arr_ind_top_left;
+    s16 arr_ind_top_right;
+    s16 arr_ind_bottom_left;
+    s16 arr_ind_bottom_right;
 
     u16 type_top_left, type_top_right, type_bottom_left, type_bottom_right;
 
     static u16 prev_collide_flags = 0;
-    static u16 prev_player_y = 0;
-    static u16 prev_player_x = 0;
+    static s16 prev_player_y = 0;
+    static s16 prev_player_x = 0;
 
     if (direction & direction_up) // UP
     {
