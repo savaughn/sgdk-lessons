@@ -17,102 +17,12 @@ GameContext *getGameContext(void)
 	return ctx;
 }
 
-static int check_up = 0;
-static int check_down = 0;
-static int check_left = 0;
-static int check_right = 0;
-
-typedef struct
-{
-	u16 length;
-	const u8 *collision_data;
-} SGPLevelCollisionData;
-
 static s16 current_level_index = 0;
 
 const SGPLevelCollisionData *levels[1] = {
 	&(SGPLevelCollisionData){
 		.length = level_1_map_collision_length,
 		.collision_data = level_1_map_collision}};
-
-typedef enum
-{
-	direction_up = 1,
-	direction_down = 2,
-	direction_left = 4,
-	direction_right = 8
-} Direction;
-
-/**
- * Checks for player collision with the level tiles using look-ahead logic.
- * Returns TRUE if a collision is detected in the specified direction.
- */
-static bool SGP_PlayerLevelCollision(s16 player_x, s16 player_y, s16 player_width, s16 player_height, SGPLevelCollisionData *level, u8 direction)
-{
-	s16 tile_x_left;
-	s16 tile_x_right;
-	s16 tile_y_top = player_y >> 4;
-	s16 tile_y_bottom = (player_y + player_height - 1) >> 4;
-
-	u16 arr_ind_top_left;
-	u16 arr_ind_top_right;
-	u16 arr_ind_bottom_left;
-	u16 arr_ind_bottom_right;
-
-	u8 type_topleft, type_topright, type_bottom_left, type_bottom_right;
-
-	if (direction & direction_up) // UP
-	{
-		tile_y_top = (player_y - 1) >> 4;
-		tile_x_left = (player_x + 1) >> 4;
-		arr_ind_top_left = tile_x_left + (tile_y_top * level->length);
-		type_topleft = level->collision_data[arr_ind_top_left];
-
-		tile_x_right = ((player_x + player_width - 1) >> 4);
-		arr_ind_top_right = tile_x_right + (tile_y_top * level->length);
-		type_topright = level->collision_data[arr_ind_top_right];
-
-		return (type_topleft == SOLID_TILE || type_topright == SOLID_TILE);
-	}
-	else if (direction & direction_down) // DOWN
-	{
-		tile_y_bottom = (player_y + player_height) >> 4;
-		tile_x_left = (player_x + 1) >> 4;
-		arr_ind_bottom_left = tile_x_left + (tile_y_bottom * level->length);
-		type_bottom_left = level->collision_data[arr_ind_bottom_left];
-
-		tile_x_right = ((player_x + player_width - 1) >> 4);
-		arr_ind_bottom_right = tile_x_right + (tile_y_bottom * level->length);
-		type_bottom_right = level->collision_data[arr_ind_bottom_right];
-
-		return (type_bottom_left == SOLID_TILE || type_bottom_right == SOLID_TILE);
-	}
-	if (direction & direction_left) // LEFT
-	{
-		// check the x - 1 position moving left
-		tile_x_left = (player_x - 1) >> 4;
-		arr_ind_top_left = tile_x_left + (tile_y_top * level->length);
-		type_topleft = level->collision_data[arr_ind_top_left];
-
-		arr_ind_bottom_left = tile_x_left + (tile_y_bottom * level->length);
-		type_bottom_left = level->collision_data[arr_ind_bottom_left];
-
-		return (type_topleft == SOLID_TILE || type_bottom_left == SOLID_TILE);
-	}
-	else if (direction & direction_right) // RIGHT
-	{
-		// check the x + 1 position moving right
-		tile_x_right = (player_x + player_width + 1) >> 4;
-		arr_ind_top_right = tile_x_right + (tile_y_top * level->length);
-		arr_ind_bottom_right = tile_x_right + (tile_y_bottom * level->length);
-		type_topright = level->collision_data[arr_ind_top_right];
-		type_bottom_right = level->collision_data[arr_ind_bottom_right];
-
-		return (type_topright == SOLID_TILE || type_bottom_right == SOLID_TILE);
-	}
-
-	return FALSE; // No collision detected
-}
 
 static void walk(Player *player)
 {
@@ -134,14 +44,6 @@ static void walk(Player *player)
 	player->can_idle = TRUE;
 }
 
-static inline bool isPlayerInNewTile(Player *player, s16 new_tile_x, s16 new_tile_y)
-{
-	return (new_tile_x != player->prev_tile_x || new_tile_y != player->prev_tile_y);
-}
-static bool is_colliding_down = FALSE;
-static bool is_colliding_up = FALSE;
-static bool is_colliding_left = FALSE;
-static bool is_colliding_right = FALSE;
 static void animatePlayer(Player *player, u16 joyState)
 {
 
@@ -160,11 +62,6 @@ static void animatePlayer(Player *player, u16 joyState)
 					direction_up))
 			{
 				player->y -= WALK_SPEED;
-				is_colliding_up = FALSE;
-			}
-			else
-			{
-				is_colliding_up = TRUE;
 			}
 		}
 		else if (SGP_ButtonDown(player->index, BUTTON_DOWN))
@@ -179,11 +76,6 @@ static void animatePlayer(Player *player, u16 joyState)
 					direction_down))
 			{
 				player->y += WALK_SPEED;
-				is_colliding_down = FALSE;
-			}
-			else
-			{
-				is_colliding_down = TRUE;
 			}
 		}
 		if (SGP_ButtonDown(player->index, BUTTON_LEFT))
@@ -199,11 +91,6 @@ static void animatePlayer(Player *player, u16 joyState)
 			{
 				player->x -= WALK_SPEED;
 				SPR_setHFlip(player->sprite, TRUE);
-				is_colliding_left = FALSE;
-			}
-			else
-			{
-				is_colliding_left = TRUE;
 			}
 		}
 		else if (SGP_ButtonDown(player->index, BUTTON_RIGHT))
@@ -218,13 +105,8 @@ static void animatePlayer(Player *player, u16 joyState)
 			{
 				player->x += WALK_SPEED;
 				SPR_setHFlip(player->sprite, FALSE);
-				is_colliding_right = FALSE;
 			}
-			else
-			{
-				is_colliding_right = TRUE;
-				// player->x -= FIX32(1.1); 
-			}
+
 		}
 		walk(player);
 		break;
@@ -251,10 +133,6 @@ static void animatePlayer(Player *player, u16 joyState)
 		}
 		player->frameCounter++;
 		player->can_idle = TRUE;
-		is_colliding_up = FALSE;
-		is_colliding_down = FALSE;
-		is_colliding_left = FALSE;
-		is_colliding_right = FALSE;
 		break;
 	case STATE_JUMP:
 		if (player->index == JOY_1)
@@ -337,8 +215,6 @@ int main(_Bool)
 
 	while (TRUE)
 	{
-		static int map_x = 0, map_y = 0;
-
 		SGP_PollInput();
 
 		handleInput(&ctx->player_1, sgp.input.joy1_state, JOY_1);
@@ -365,23 +241,16 @@ int main(_Bool)
 #ifdef DEBUG
 		// /********DEBUG PRINT**********/
 		char buffer[64];
-		sprintf(buffer, "p_pos (%d, %d)\n", F32_toInt(ctx->player_1.x), F32_toInt(ctx->player_1.y));
+		sprintf(buffer, "p_pos (%ld, %ld)\n", F32_toInt(ctx->player_1.x), F32_toInt(ctx->player_1.y));
 		SGP_DebugPrint(buffer, 0, 0);
 
 		// char buffer2[64];
 		// sprintf(buffer2, "c_pos (%d, %d)\n", sgp.camera.current_x, sgp.camera.current_y);
 		// SGP_DebugPrint(buffer2, 0, 1);
 
-		char buffer3[64];
-		sprintf(buffer3, "chk u%d d%d l%d r%d", check_up, check_down, check_left, check_right);
-		SGP_DebugPrint(buffer3, 0, 1);
-
-		char buffer4[64];
-		sprintf(buffer4, "u%d, d%d, l%d, r%d", is_colliding_up, is_colliding_down, is_colliding_left, is_colliding_right);
-		SGP_DebugPrint(buffer4, 0, 2);
 		// /********DEBUG PRINT**********/
 
-		if (SGP_ButtonDown(JOY_1, BUTTON_MODE))
+		if (SGP_ButtonDown(JOY_1, BUTTON_START))
 		{
 			SGP_ToggleDebug();
 			if (SGP_isCameraActive())

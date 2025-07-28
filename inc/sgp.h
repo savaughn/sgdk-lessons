@@ -35,6 +35,18 @@
 #define BUTTON_NONE 0x0000
 #define VDP_SPRITE_OFFSET 0x80 // Offset for sprite coordinates in VDP
 
+// Collision flag bitmasks
+#define COLLIDE_DOWN  (1 << 0)
+#define COLLIDE_UP    (1 << 1)
+#define COLLIDE_LEFT  (1 << 2)
+#define COLLIDE_RIGHT (1 << 3)
+
+// Bitwise flag helper macros
+#define SET_ACTIVE(flags, mask)      ((flags) |= (mask))
+#define SET_INACTIVE(flags, mask)    ((flags) &= ~(mask))
+#define FLAG_IS_ACTIVE(flags, mask)   (((flags) & (mask)) != 0)
+#define FLAG_IS_INACTIVE(flags, mask) (((flags) & (mask)) == 0)
+
 #define DEBUG 1
 static const u8 SOLID_TILE = 1;
 
@@ -107,6 +119,20 @@ typedef struct
     SGPCamera camera; // Camera state
 } SGP;
 
+typedef enum
+{
+	direction_up = 1,
+	direction_down = 2,
+	direction_left = 4,
+	direction_right = 8
+} Direction;
+
+typedef struct
+{
+	u16 length;
+	const u8 *collision_data;
+} SGPLevelCollisionData;
+
 /**
  * @brief Global platform state (must be defined in one .c file).
  */
@@ -134,6 +160,39 @@ static inline void SGP_init(void)
     sgp.camera.map_width = 0;
     sgp.camera.max_vertical_scroll = 32;
 }
+
+//----------------------------------------------------------------------------------
+// Debug Functions
+//----------------------------------------------------------------------------------
+#ifdef DEBUG
+static bool showDebug = TRUE;
+static inline void SGP_ToggleDebug(void)
+{
+    showDebug = !showDebug;
+}
+
+static inline bool SGP_isDebugEnabled(void)
+{
+    return showDebug;
+}
+
+static inline void SGP_DebugPrint(const char *text, s16 x, s16 y)
+{
+    if (y > 4 ) {
+        return;
+    }
+    if (SGP_isDebugEnabled())
+    {
+        VDP_setWindowVPos(FALSE, 5);
+        VDP_drawTextEx(WINDOW, text, TILE_ATTR(PAL1, FALSE, FALSE, FALSE), x, y, DMA);
+    }
+    else
+    {
+        VDP_setWindowVPos(FALSE, 0);
+    }
+}
+
+#endif // DEBUG
 
 //----------------------------------------------------------------------------------
 // Input Functions
@@ -219,7 +278,7 @@ typedef struct
  * @param current_x   Target X position
  * @param current_y   Target Y position
  */
-static inline int SGP_CameraInit(Map *map)
+static inline u16 SGP_CameraInit(Map *map)
 {
     sgp.camera.map = map;
     sgp.camera.map_height = SGP_MetatilesToPixels(map->h);
@@ -382,39 +441,145 @@ static inline void SGP_ShakeCamera(s16 duration, s16 intensity)
     }
     SGP_activateCamera(); // Re-enable camera tracking after shake
 }
-
 //----------------------------------------------------------------------------------
-// Debug Functions
+// Collision Functions
 //----------------------------------------------------------------------------------
-#ifdef DEBUG
-static bool showDebug = TRUE;
-static inline void SGP_ToggleDebug(void)
+/**
+ * Checks for player collision with the level tiles using look-ahead logic.
+ * Returns TRUE if a collision is detected in the specified direction.
+ */
+static inline bool SGP_PlayerLevelCollision(s16 player_x, s16 player_y, s16 player_width, s16 player_height, const SGPLevelCollisionData *level, u8 direction)
 {
-    showDebug = !showDebug;
-}
+    s16 tile_x_left;
+    s16 tile_x_right;
+    s16 tile_y_top = player_y >> 4;
+    s16 tile_y_bottom = (player_y + player_height - 1) >> 4;
 
-static inline bool SGP_isDebugEnabled(void)
-{
-    return showDebug;
-}
+    u16 arr_ind_top_left;
+    u16 arr_ind_top_right;
+    u16 arr_ind_bottom_left;
+    u16 arr_ind_bottom_right;
 
-static inline void SGP_DebugPrint(const char *text, s16 x, s16 y)
-{
-    if (y > 4 ) {
-        return;
-    }
-    if (SGP_isDebugEnabled())
+    u16 type_top_left, type_top_right, type_bottom_left, type_bottom_right;
+
+    static u16 prev_collide_flags = 0;
+    static u16 prev_player_y = 0;
+    static u16 prev_player_x = 0;
+
+    if (direction & direction_up) // UP
     {
-        VDP_setWindowVPos(FALSE, 5);
-        VDP_drawTextEx(WINDOW, text, TILE_ATTR(PAL1, FALSE, FALSE, FALSE), x, y, DMA);
+        SET_INACTIVE(prev_collide_flags, COLLIDE_DOWN);
+
+        // Only check vertical position for up
+        if (prev_player_y == player_y && prev_player_x == player_x && FLAG_IS_ACTIVE(prev_collide_flags, COLLIDE_UP)) return TRUE;
+
+        if (player_y % 16 != 0) return FALSE;
+
+        tile_y_top = (player_y - 1) >> 4;
+        tile_x_left = (player_x + 1) >> 4;
+        arr_ind_top_left = tile_x_left + (tile_y_top * level->length);
+        type_top_left = level->collision_data[arr_ind_top_left];
+
+        tile_x_right = ((player_x + player_width - 1) >> 4);
+        arr_ind_top_right = tile_x_right + (tile_y_top * level->length);
+        type_top_right = level->collision_data[arr_ind_top_right];
+
+        prev_player_y = player_y;
+        prev_player_x = player_x;
+
+        if (type_top_left == SOLID_TILE || type_top_right == SOLID_TILE)
+            SET_ACTIVE(prev_collide_flags, COLLIDE_UP);
+        else
+            SET_INACTIVE(prev_collide_flags, COLLIDE_UP);
+
+        return FLAG_IS_ACTIVE(prev_collide_flags, COLLIDE_UP);
     }
-    else
+    else if (direction & direction_down) // DOWN
     {
-        VDP_setWindowVPos(FALSE, 0);
+        SET_INACTIVE(prev_collide_flags, COLLIDE_UP);
+
+        if ((player_y + player_height) % 16 != 0) return FALSE;
+
+        // Only check vertical position for down
+        if (prev_player_y == player_y && FLAG_IS_ACTIVE(prev_collide_flags, COLLIDE_DOWN)) return TRUE;
+        
+        tile_y_bottom = (player_y + player_height) >> 4;
+        tile_x_left = (player_x + 1) >> 4;
+        arr_ind_bottom_left = tile_x_left + (tile_y_bottom * level->length);
+        type_bottom_left = level->collision_data[arr_ind_bottom_left];
+
+        tile_x_right = ((player_x + player_width - 1) >> 4);
+        arr_ind_bottom_right = tile_x_right + (tile_y_bottom * level->length);
+        type_bottom_right = level->collision_data[arr_ind_bottom_right];
+
+        prev_player_y = player_y;
+        prev_player_x = player_x;
+
+        if (type_bottom_left == SOLID_TILE || type_bottom_right == SOLID_TILE)
+            SET_ACTIVE(prev_collide_flags, COLLIDE_DOWN);
+        else
+            SET_INACTIVE(prev_collide_flags, COLLIDE_DOWN);
+
+        return FLAG_IS_ACTIVE(prev_collide_flags, COLLIDE_DOWN);
     }
+    else {
+        SET_INACTIVE(prev_collide_flags, COLLIDE_DOWN | COLLIDE_UP);
+    }
+
+    if (direction & direction_left) // LEFT
+    {
+        SET_INACTIVE(prev_collide_flags, COLLIDE_RIGHT);
+
+        // Only check horizontal position for left
+        if (prev_player_x == player_x && prev_player_y == player_y && FLAG_IS_ACTIVE(prev_collide_flags, COLLIDE_LEFT)) return TRUE;
+        if (player_x % 16 != 0) return FALSE;
+
+        tile_x_left = (player_x - 1) >> 4;
+        arr_ind_top_left = tile_x_left + (tile_y_top * level->length);
+        type_top_left = level->collision_data[arr_ind_top_left];
+
+        arr_ind_bottom_left = tile_x_left + (tile_y_bottom * level->length);
+        type_bottom_left = level->collision_data[arr_ind_bottom_left];
+
+        prev_player_x = player_x;
+        prev_player_y = player_y;
+
+        if (type_top_left == SOLID_TILE || type_bottom_left == SOLID_TILE)
+            SET_ACTIVE(prev_collide_flags, COLLIDE_LEFT);
+        else
+            SET_INACTIVE(prev_collide_flags, COLLIDE_LEFT);
+
+        return FLAG_IS_ACTIVE(prev_collide_flags, COLLIDE_LEFT);
+    }
+    else if (direction & direction_right) // RIGHT
+    {
+        SET_INACTIVE(prev_collide_flags, COLLIDE_LEFT);
+
+        // Only check horizontal position for right
+        if (prev_player_x == player_x && prev_player_y == player_y && FLAG_IS_ACTIVE(prev_collide_flags, COLLIDE_RIGHT)) return TRUE;
+        if ((player_x + player_width) % 16 != 0) return FALSE;
+
+        tile_x_right = (player_x + player_width + 1) >> 4;
+        arr_ind_top_right = tile_x_right + (tile_y_top * level->length);
+        arr_ind_bottom_right = tile_x_right + (tile_y_bottom * level->length);
+        type_top_right = level->collision_data[arr_ind_top_right];
+        type_bottom_right = level->collision_data[arr_ind_bottom_right];
+
+        prev_player_x = player_x;
+        prev_player_y = player_y;
+
+        if (type_top_right == SOLID_TILE || type_bottom_right == SOLID_TILE)
+            SET_ACTIVE(prev_collide_flags, COLLIDE_RIGHT);
+        else
+            SET_INACTIVE(prev_collide_flags, COLLIDE_RIGHT);
+
+        return FLAG_IS_ACTIVE(prev_collide_flags, COLLIDE_RIGHT);
+    } else {
+        SET_INACTIVE(prev_collide_flags, COLLIDE_LEFT | COLLIDE_RIGHT);
+    }
+    return FALSE; // No collision detected
 }
 
-#endif // DEBUG
 static inline void SGP_HandleError(const char *text)
 {
     VDP_drawText(text, 0, 0);
