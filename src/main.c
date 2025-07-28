@@ -59,7 +59,7 @@ static void animatePlayer(Player *player, u16 joyState)
 					player->width,
 					player->height,
 					levels[current_level_index],
-					direction_up))
+					SGP_DIR_UP))
 			{
 				player->y -= WALK_SPEED;
 			}
@@ -73,7 +73,7 @@ static void animatePlayer(Player *player, u16 joyState)
 					player->width,
 					player->height,
 					levels[current_level_index],
-					direction_down))
+					SGP_DIR_DOWN))
 			{
 				player->y += WALK_SPEED;
 			}
@@ -87,7 +87,7 @@ static void animatePlayer(Player *player, u16 joyState)
 					player->width,
 					player->height,
 					levels[current_level_index],
-					direction_left))
+					SGP_DIR_LEFT))
 			{
 				player->x -= WALK_SPEED;
 				SPR_setHFlip(player->sprite, TRUE);
@@ -101,7 +101,7 @@ static void animatePlayer(Player *player, u16 joyState)
 					player->width,
 					player->height,
 					levels[current_level_index],
-					direction_right))
+					SGP_DIR_RIGHT))
 			{
 				player->x += WALK_SPEED;
 				SPR_setHFlip(player->sprite, FALSE);

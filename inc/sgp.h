@@ -65,7 +65,7 @@ typedef struct
     u16 joy2_state;    // Current state of joypad 2
     u16 joy1_previous; // Previous state of joypad 1
     u16 joy2_previous; // Previous state of joypad 2
-} input;
+} SGPInput;
 
 typedef struct
 {
@@ -115,17 +115,20 @@ typedef struct
  */
 typedef struct
 {
-    input input;      // Input state
+    SGPInput input;   // Input state
     SGPCamera camera; // Camera state
 } SGP;
 
+/**
+ * @brief Movement directions for sprites and objects.
+ */
 typedef enum
 {
-	direction_up = 1,
-	direction_down = 2,
-	direction_left = 4,
-	direction_right = 8
-} Direction;
+	SGP_DIR_UP = 1,
+	SGP_DIR_DOWN = 2,
+	SGP_DIR_LEFT = 4,
+	SGP_DIR_RIGHT = 8
+} SGPMovementDirection;
 
 typedef struct
 {
@@ -446,7 +449,7 @@ static inline void SGP_ShakeCamera(u16 duration, s16 intensity)
  */
 static inline bool SGP_PlayerLevelCollision(
     s16 player_x, s16 player_y, u16 player_width, u16 player_height,
-    const SGPLevelCollisionData *level, u16 direction)
+    const SGPLevelCollisionData *level, SGPMovementDirection direction)
 {
     s16 tile_x_left;
     s16 tile_x_right;
@@ -464,7 +467,7 @@ static inline bool SGP_PlayerLevelCollision(
     static s16 prev_player_y = 0;
     static s16 prev_player_x = 0;
 
-    if (direction & direction_up) // UP
+    if (direction & SGP_DIR_UP) // UP
     {
         SET_INACTIVE(prev_collide_flags, COLLIDE_DOWN);
 
@@ -492,7 +495,7 @@ static inline bool SGP_PlayerLevelCollision(
 
         return FLAG_IS_ACTIVE(prev_collide_flags, COLLIDE_UP);
     }
-    else if (direction & direction_down) // DOWN
+    else if (direction & SGP_DIR_DOWN) // DOWN
     {
         SET_INACTIVE(prev_collide_flags, COLLIDE_UP);
 
@@ -524,7 +527,7 @@ static inline bool SGP_PlayerLevelCollision(
         SET_INACTIVE(prev_collide_flags, COLLIDE_DOWN | COLLIDE_UP);
     }
 
-    if (direction & direction_left) // LEFT
+    if (direction & SGP_DIR_LEFT) // LEFT
     {
         SET_INACTIVE(prev_collide_flags, COLLIDE_RIGHT);
 
@@ -549,7 +552,7 @@ static inline bool SGP_PlayerLevelCollision(
 
         return FLAG_IS_ACTIVE(prev_collide_flags, COLLIDE_LEFT);
     }
-    else if (direction & direction_right) // RIGHT
+    else if (direction & SGP_DIR_RIGHT) // RIGHT
     {
         SET_INACTIVE(prev_collide_flags, COLLIDE_LEFT);
 
