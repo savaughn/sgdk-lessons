@@ -21,7 +21,8 @@ static s16 current_level_index = 0;
 
 const SGPLevelCollisionData *levels[1] = {
 	&(SGPLevelCollisionData){
-		.length = level_1_map_collision_length,
+		.row_length = level_1_map_collision_row_length,
+		.data_length = level_1_map_collision_length,
 		.collision_data = level_1_map_collision}};
 
 static void walk(Player *player)
@@ -54,6 +55,7 @@ static void animatePlayer(Player *player, u16 joyState)
 		{
 			// About to enter a new tile, check collision at the next position
 			if (!SGP_PlayerLevelCollision(
+					player->index,
 					F32_toInt(player->x),
 					F32_toInt(player->y),
 					player->width,
@@ -68,6 +70,7 @@ static void animatePlayer(Player *player, u16 joyState)
 		{
 			// About to enter a new tile, check collision at the next position
 			if (!SGP_PlayerLevelCollision(
+					player->index,
 					F32_toInt(player->x),
 					F32_toInt(player->y),
 					player->width,
@@ -82,6 +85,7 @@ static void animatePlayer(Player *player, u16 joyState)
 		{
 			// About to enter a new tile, check collision at the next position
 			if (!SGP_PlayerLevelCollision(
+					player->index,
 					F32_toInt(player->x),
 					F32_toInt(player->y),
 					player->width,
@@ -96,6 +100,7 @@ static void animatePlayer(Player *player, u16 joyState)
 		else if (SGP_ButtonDown(player->index, BUTTON_RIGHT))
 		{
 			if (!SGP_PlayerLevelCollision(
+					player->index,
 					F32_toInt(player->x),
 					F32_toInt(player->y),
 					player->width,
@@ -106,7 +111,6 @@ static void animatePlayer(Player *player, u16 joyState)
 				player->x += WALK_SPEED;
 				SPR_setHFlip(player->sprite, FALSE);
 			}
-
 		}
 		walk(player);
 		break;

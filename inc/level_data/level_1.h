@@ -3,7 +3,8 @@
 
 #include <genesis.h>
 
-const u8 level_1_map_collision_length = 64;
+const u16 level_1_map_collision_length = 1280; // Length of the collision data array
+const u8 level_1_map_collision_row_length = 64;
 const u8 level_1_map_collision[1280] =
 {
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
