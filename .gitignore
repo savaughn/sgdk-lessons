@@ -2,3 +2,8 @@
 out/
 .DS_Store
 ignore/
+
+tests/smoke_test
+tests/smoke_test_debug
+tests/collision_test
+tests/collision_test_debug
