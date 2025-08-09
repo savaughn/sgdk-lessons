@@ -53,64 +53,68 @@ static void animatePlayer(Player *player, u16 joyState)
 	case STATE_WALK:
 		if (SGP_ButtonDown(player->index, BUTTON_UP))
 		{
+			player->y -= WALK_SPEED;
 			// About to enter a new tile, check collision at the next position
-			if (!SGP_PlayerLevelCollision(
+			if (SGP_PlayerLevelCollision(
 					player->index,
-					F32_toInt(player->x),
-					F32_toInt(player->y),
-					player->width,
-					player->height,
+					F32_toInt(player->x) + 10,
+					F32_toInt(player->y) + 10,
+					player->width - 20,
+					player->height - 20,
 					levels[current_level_index],
 					SGP_DIR_UP))
-			{
-				player->y -= WALK_SPEED;
-			}
-		}
-		else if (SGP_ButtonDown(player->index, BUTTON_DOWN))
-		{
-			// About to enter a new tile, check collision at the next position
-			if (!SGP_PlayerLevelCollision(
-					player->index,
-					F32_toInt(player->x),
-					F32_toInt(player->y),
-					player->width,
-					player->height,
-					levels[current_level_index],
-					SGP_DIR_DOWN))
 			{
 				player->y += WALK_SPEED;
 			}
 		}
+		else if (SGP_ButtonDown(player->index, BUTTON_DOWN))
+		{
+			player->y += WALK_SPEED;
+			// About to enter a new tile, check collision at the next position
+			if (SGP_PlayerLevelCollision(
+					player->index,
+					F32_toInt(player->x) + 10,
+					F32_toInt(player->y) + 10,
+					player->width - 20,
+					player->height - 20,
+					levels[current_level_index],
+					SGP_DIR_DOWN))
+			{
+				player->y -= WALK_SPEED;
+			}
+		}
 		if (SGP_ButtonDown(player->index, BUTTON_LEFT))
 		{
+			player->x -= WALK_SPEED;
 			// About to enter a new tile, check collision at the next position
-			if (!SGP_PlayerLevelCollision(
+			if (SGP_PlayerLevelCollision(
 					player->index,
-					F32_toInt(player->x),
-					F32_toInt(player->y),
-					player->width,
-					player->height,
+					F32_toInt(player->x) + 10,
+					F32_toInt(player->y) + 10,
+					player->width - 20,
+					player->height - 20,
 					levels[current_level_index],
 					SGP_DIR_LEFT))
 			{
-				player->x -= WALK_SPEED;
-				SPR_setHFlip(player->sprite, TRUE);
+				player->x += WALK_SPEED;
 			}
+			SPR_setHFlip(player->sprite, TRUE);
 		}
 		else if (SGP_ButtonDown(player->index, BUTTON_RIGHT))
 		{
-			if (!SGP_PlayerLevelCollision(
+			player->x += WALK_SPEED;
+			if (SGP_PlayerLevelCollision(
 					player->index,
-					F32_toInt(player->x),
-					F32_toInt(player->y),
-					player->width,
-					player->height,
+					F32_toInt(player->x) + 10,
+					F32_toInt(player->y) + 10,
+					player->width - 20,
+					player->height - 20,
 					levels[current_level_index],
 					SGP_DIR_RIGHT))
 			{
-				player->x += WALK_SPEED;
-				SPR_setHFlip(player->sprite, FALSE);
+				player->x -= WALK_SPEED;
 			}
+			SPR_setHFlip(player->sprite, FALSE);
 		}
 		walk(player);
 		break;
