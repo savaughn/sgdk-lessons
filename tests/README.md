@@ -6,6 +6,7 @@ This directory contains tests for the SGP (Sega Genesis Platform) header-only li
 
 - **`smoke_test.c`** - Basic smoke test that validates SGP compiles and functions work
 - **`collision_test.c`** - Comprehensive collision detection test suite
+- **`input_test.c`** - Comprehensive input function test suite
 - **`sgp_test.h`** - Test wrapper header with mock SGDK dependencies
 - **`Makefile`** - Build system for tests
 
@@ -16,18 +17,22 @@ This directory contains tests for the SGP (Sega Genesis Platform) header-only li
 cd tests/
 make test          # Run basic smoke test
 make collision     # Run collision detection test
-make all_tests     # Run both smoke and collision tests
+make input         # Run input function test
+make all_tests     # Run all tests (smoke, collision, and input)
 make test_debug    # Run smoke test with DEBUG mode enabled
 make collision_debug # Run collision test with DEBUG mode enabled
+make input_debug   # Run input test with DEBUG mode enabled
 ```
 
 ### Available Targets
 
 - `make test` - Build and run smoke test
 - `make collision` - Build and run collision test
+- `make input` - Build and run input test
 - `make test_debug` - Build and run smoke test with DEBUG mode
 - `make collision_debug` - Build and run collision test with DEBUG mode
-- `make all_tests` - Run both smoke and collision tests
+- `make input_debug` - Build and run input test with DEBUG mode
+- `make all_tests` - Run all tests (smoke, collision, and input)
 - `make syntax` - Check syntax for all tests (no execution)
 - `make clean` - Remove build artifacts
 - `make help` - Show all available targets

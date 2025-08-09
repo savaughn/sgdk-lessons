@@ -9,15 +9,17 @@ CFLAGS = -std=c99 -Wall -Wextra -I../inc
 LDFLAGS = 
 
 # Test targets
-SMOKE_TEST = smoke_test
-COLLISION_TEST = collision_test
+SMOKE_TEST = smoke_test.test
+COLLISION_TEST = collision_test.test
+INPUT_TEST = input_test.test
 
 # Source files
 SMOKE_TEST_SRC = smoke_test.c
 COLLISION_TEST_SRC = collision_test.c
+INPUT_TEST_SRC = input_test.c
 
 # Default target
-all: $(SMOKE_TEST) $(COLLISION_TEST)
+all: $(SMOKE_TEST) $(COLLISION_TEST) $(INPUT_TEST)
 
 # Build smoke test
 $(SMOKE_TEST): $(SMOKE_TEST_SRC)
@@ -37,6 +39,16 @@ $(COLLISION_TEST): $(COLLISION_TEST_SRC)
 # Build collision test with DEBUG mode
 $(COLLISION_TEST)_debug: $(COLLISION_TEST_SRC)
 	@echo "Building collision test (DEBUG mode)..."
+	$(CC) $(CFLAGS) -DDEBUG -o $@ $< $(LDFLAGS)
+
+# Build input test
+$(INPUT_TEST): $(INPUT_TEST_SRC)
+	@echo "Building input test..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+
+# Build input test with DEBUG mode
+$(INPUT_TEST)_debug: $(INPUT_TEST_SRC)
+	@echo "Building input test (DEBUG mode)..."
 	$(CC) $(CFLAGS) -DDEBUG -o $@ $< $(LDFLAGS)
 
 # Run smoke test
@@ -59,10 +71,20 @@ collision_debug: $(COLLISION_TEST)_debug
 	@echo "Running collision test (DEBUG mode)..."
 	@./$(COLLISION_TEST)_debug
 
+# Run input test
+input: $(INPUT_TEST)
+	@echo "Running input test..."
+	@./$(INPUT_TEST)
+
+# Run input test with DEBUG mode
+input_debug: $(INPUT_TEST)_debug
+	@echo "Running input test (DEBUG mode)..."
+	@./$(INPUT_TEST)_debug
+
 # Clean build artifacts
 clean:
 	@echo "Cleaning test artifacts..."
-	@rm -f $(SMOKE_TEST) $(SMOKE_TEST)_debug $(COLLISION_TEST) $(COLLISION_TEST)_debug *.o
+	@rm -f *.test *.o *.test_debug
 
 # Check syntax only (no linking)
 syntax_check: $(SMOKE_TEST_SRC)
@@ -84,13 +106,24 @@ collision_syntax_check_debug: $(COLLISION_TEST_SRC)
 	@echo "Checking collision test syntax (DEBUG mode)..."
 	$(CC) $(CFLAGS) -DDEBUG -fsyntax-only $<
 
+# Check input test syntax
+input_syntax_check: $(INPUT_TEST_SRC)
+	@echo "Checking input test syntax..."
+	$(CC) $(CFLAGS) -fsyntax-only $<
+
+# Check input test syntax with DEBUG mode
+input_syntax_check_debug: $(INPUT_TEST_SRC)
+	@echo "Checking input test syntax (DEBUG mode)..."
+	$(CC) $(CFLAGS) -DDEBUG -fsyntax-only $<
+
 # Run all syntax checks
-syntax: syntax_check syntax_check_debug collision_syntax_check collision_syntax_check_debug
+syntax: syntax_check syntax_check_debug collision_syntax_check collision_syntax_check_debug input_syntax_check input_syntax_check_debug
 	@echo "✓ All syntax checks passed"
 
 # Run all tests
-all_tests: test collision
+all_tests: test collision input
 	@echo "✓ All tests completed"
+	@make clean
 
 # Help target
 help:
@@ -102,9 +135,11 @@ help:
 	@echo "  test_debug    - Build and run smoke test with DEBUG mode"
 	@echo "  collision     - Build and run collision test"
 	@echo "  collision_debug - Build and run collision test with DEBUG mode"
-	@echo "  all_tests     - Run both smoke and collision tests"
+	@echo "  input         - Build and run input test"
+	@echo "  input_debug   - Build and run input test with DEBUG mode"
+	@echo "  all_tests     - Run smoke, collision, and input tests"
 	@echo "  syntax        - Check syntax for all tests (both normal and DEBUG)"
 	@echo "  clean         - Remove build artifacts"
 	@echo "  help          - Show this help"
 
-.PHONY: all test test_debug collision collision_debug all_tests clean syntax_check syntax_check_debug collision_syntax_check collision_syntax_check_debug syntax help
+.PHONY: all test test_debug collision collision_debug input input_debug all_tests clean syntax_check syntax_check_debug collision_syntax_check collision_syntax_check_debug input_syntax_check input_syntax_check_debug syntax help
