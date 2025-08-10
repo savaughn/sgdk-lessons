@@ -2,6 +2,7 @@
 out/
 .DS_Store
 ignore/
+inc/sgp/
 
 tests/smoke_test
 tests/smoke_test_debug
