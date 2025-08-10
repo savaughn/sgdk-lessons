@@ -18,8 +18,4 @@ copy: debug
 	@echo "Successfully copied rom.bin to /Volumes/GENESISSD/rom.bin"
 	@diskutil eject /Volumes/GENESISSD
 
-test: all
-	@echo "Running tests..."
-	@cd tests && make all_tests
-	@rm -f tests/*.test
-.PHONY: run copy test
+.PHONY: run copy

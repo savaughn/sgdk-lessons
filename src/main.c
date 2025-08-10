@@ -6,7 +6,7 @@
 
 #include "level_data/level_1.h"
 
-#include "sgp.h"
+#include "sgp/sgp.h"
 
 Sprite *frog, *sonic;
 SGP sgp;

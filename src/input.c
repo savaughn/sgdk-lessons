@@ -1,6 +1,7 @@
 
+#include <genesis.h>
 #include "input.h"
-#include "sgp.h"
+#include "sgp/sgp.h"
 
 // Continuous press event handler for joypad input
 void handleInput(Player* player, u16 joyState, u16 joy) {
